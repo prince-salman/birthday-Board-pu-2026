@@ -452,13 +452,12 @@ export function getDaysUntil(day: number, month: number, refDate?: Date) {
 }
 
 export function deduplicate(data: Person[]) {
-  const seen = new Map();
-  return data.filter((p) => {
+  const map = new Map<string, Person>();
+  for (const p of data) {
     const key = p.name.toLowerCase().replace(/\s+/g, "");
-    if (seen.has(key)) return false;
-    seen.set(key, true);
-    return true;
-  });
+    map.set(key, p);
+  }
+  return Array.from(map.values());
 }
 
 export function filterByDate(day: number, month: number) {
