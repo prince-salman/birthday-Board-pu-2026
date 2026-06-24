@@ -19,7 +19,7 @@ import {
   getMonthCount,
   searchPeople,
   deduplicate,
-  BIRTHDAY_DATA,
+  fetchLiveBirthdayData,
   Person,
 } from "@/lib/data";
 
@@ -232,6 +232,16 @@ export default function HomePage() {
   const [searchResults, setSearchResults] = useState<Person[]>([]);
   const [now] = useState(() => new Date());
 
+  const [liveData, setLiveData] = useState<Person[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLiveBirthdayData().then((data) => {
+      setLiveData(data);
+      setIsLoading(false);
+    });
+  }, []);
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "dark") {
@@ -259,8 +269,8 @@ export default function HomePage() {
   const todayMonth = now.getMonth() + 1;
   const todayYear = now.getFullYear();
 
-  const todayPeople = filterByDate(todayDay, todayMonth);
-  const monthCounts = getMonthCounts();
+  const todayPeople = useMemo(() => filterByDate(liveData, todayDay, todayMonth), [liveData, todayDay, todayMonth]);
+  const monthCounts = useMemo(() => getMonthCounts(liveData), [liveData]);
 
   const getTabPeople = useCallback(() => {
     const yesterday = new Date(now);
@@ -271,20 +281,21 @@ export default function HomePage() {
 
     switch (activeTab) {
       case "today":
-        return filterByDate(todayDay, todayMonth);
+        return filterByDate(liveData, todayDay, todayMonth);
       case "yesterday":
-        return filterByDate(yesterday.getDate(), yesterday.getMonth() + 1);
+        return filterByDate(liveData, yesterday.getDate(), yesterday.getMonth() + 1);
       case "tomorrow":
         return filterByDate(
+          liveData,
           tomorrowDate.getDate(),
           tomorrowDate.getMonth() + 1
         );
       case "upcoming":
-        return getUpcoming(20, now);
+        return getUpcoming(liveData, 20, now);
       default:
         return [];
     }
-  }, [activeTab, todayDay, todayMonth, now]);
+  }, [activeTab, todayDay, todayMonth, now, liveData]);
 
   const [tabPeople, setTabPeople] = useState<Person[]>([]);
   const [monthFilterActive, setMonthFilterActive] = useState<number | null>(null);
@@ -296,16 +307,16 @@ export default function HomePage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setSearchResults(searchPeople(searchQuery));
+      setSearchResults(searchPeople(liveData, searchQuery));
     }, 200);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, liveData]);
 
   function handleMonthClick(month: number) {
     setMonthFilterActive(month);
     setActiveTab("");
     const people = deduplicate(
-      BIRTHDAY_DATA.filter((p) => p.month === month)
+      liveData.filter((p) => p.month === month)
     ).sort((a, b) => a.day - b.day);
     setTabPeople(people);
 
@@ -317,7 +328,19 @@ export default function HomePage() {
     setActiveTab(tab);
   }
 
-  const upcomingPreview = todayPeople.length === 0 ? getUpcoming(3) : [];
+  const upcomingPreview = todayPeople.length === 0 ? getUpcoming(liveData, 3) : [];
+  
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[var(--background)]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[var(--muted)] border-t-[var(--accent)]"></div>
+          <p className="text-sm font-medium text-[var(--muted-foreground)] tracking-widest uppercase animate-pulse">Loading Live Data...</p>
+        </div>
+      </main>
+    );
+  }
+
   const headerDateStr = `${daysArr[now.getDay()]}, ${formatDate(todayDay, todayMonth, lang)} ${todayYear}`;
 
   return (
@@ -453,15 +476,15 @@ export default function HomePage() {
 
         <section className="mb-16 grid grid-cols-1 gap-6 sm:grid-cols-3">
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-center">
-            <div className="font-serif text-5xl font-medium tracking-tight mb-2">{getUniqueCount()}</div>
+            <div className="font-serif text-5xl font-medium tracking-tight mb-2">{getUniqueCount(liveData)}</div>
             <div className="text-sm font-medium uppercase tracking-widest text-[var(--muted-foreground)]">{dict.totalFriends}</div>
           </div>
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-center">
-            <div className="font-serif text-5xl font-medium tracking-tight mb-2">{getMonthCount(todayMonth)}</div>
+            <div className="font-serif text-5xl font-medium tracking-tight mb-2">{getMonthCount(liveData, todayMonth)}</div>
             <div className="text-sm font-medium uppercase tracking-widest text-[var(--muted-foreground)]">{dict.thisMonth}</div>
           </div>
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-center">
-            <div className="font-serif text-5xl font-medium tracking-tight mb-2">{getAverageAge()}</div>
+            <div className="font-serif text-5xl font-medium tracking-tight mb-2">{getAverageAge(liveData)}</div>
             <div className="text-sm font-medium uppercase tracking-widest text-[var(--muted-foreground)]">{dict.avgAge}</div>
           </div>
         </section>
