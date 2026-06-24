@@ -1,26 +1,44 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #1a1a1a;
+    --card: #ffffff;
+    --card-foreground: #1a1a1a;
+    --muted: #f5f5f5;
+    --muted-foreground: #666666;
+    --border: #e5e5e5;
+    --accent: #b81d24;
+  }
+
+  .dark {
+    --background: #030e1f;
+    --foreground: #eef2f6;
+    --card: #091c36;
+    --card-foreground: #eef2f6;
+    --muted: #0f2c52;
+    --muted-foreground: #7ba0ca;
+    --border: #183e6b;
+    --accent: #e53944; 
+  }
+
+  * {
+    border-color: var(--border);
+  }
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)] antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .glass {
+    @apply bg-[var(--card)]/80 backdrop-blur-md border border-[var(--border)];
+  }
 }
