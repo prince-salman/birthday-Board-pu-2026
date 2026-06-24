@@ -30,8 +30,24 @@ export async function fetchLiveBirthdayData(): Promise<Person[]> {
     const result = Papa.parse(csvText, { header: true, skipEmptyLines: true });
     
     const liveData: Person[] = result.data.map((row: any) => {
-      const rawDate = parseInt(row["Tanggal Lahir"]) || 1;
-      const rawMonth = parseInt(row["Bulan lahir"]) || 1;
+      const rawDateStr = String(row["Tanggal Lahir"]).trim();
+      const rawMonthStr = String(row["Bulan lahir"]).trim();
+      
+      const rawDate = parseInt(rawDateStr) || 1;
+      let rawMonth = parseInt(rawMonthStr);
+      
+      if (isNaN(rawMonth)) {
+        let idx = MONTH_NAMES.findIndex(m => m.toLowerCase() === rawMonthStr.toLowerCase());
+        if (idx === -1) {
+          idx = EN_MONTH_NAMES.findIndex(m => m.toLowerCase() === rawMonthStr.toLowerCase());
+        }
+        if (idx !== -1 && idx !== 0) {
+          rawMonth = idx;
+        } else {
+          rawMonth = 1; // fallback
+        }
+      }
+
       const rawYear = parseInt(row["Tahun Lahir"]) || 2008;
 
       let pref = row["Preferensi dirayain bagaimana? Contoh\n- Diucapin langsung/chat\n- Diucapin jam 00:00\n- Surprise kecil kecilan\n- Traktir / Ditraktir\n- Bebas sih\n- Ga terlalu suka dirayain"];
